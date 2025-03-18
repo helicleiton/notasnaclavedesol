@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas na Clave de Sol</title>
+    <script src="https://unpkg.com/vexflow@1.2.93/releases/vexflow-min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            width: 400px;
+            margin: auto;
+        }
+        h2 {
+            color: #333;
+        }
+        .teclado {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .tecla {
+            width: 50px;
+            height: 100px;
+            border: 1px solid #000;
+            background: white;
+            text-align: center;
+            line-height: 100px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0 5px;
+            transition: 0.2s;
+        }
+        .tecla:hover {
+            background: lightgray;
+        }
+        .tecla.correta {
+            background: lightgreen;
+        }
+        .tecla.errada {
+            background: lightcoral;
+        }
+        .pontuacao {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        #timer {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+            color: red;
+        }
+        footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Identifique a Nota na Clave de Sol</h2>
+        <div id="stave"></div>
+        <div class="teclado">
+            <div class="tecla" onclick="verificarNota('C')">C</div>
+            <div class="tecla" onclick="verificarNota('D')">D</div>
+            <div class="tecla" onclick="verificarNota('E')">E</div>
+            <div class="tecla" onclick="verificarNota('F')">F</div>
+            <div class="tecla" onclick="verificarNota('G')">G</div>
+        </div>
+        <p class="pontuacao">Acertos: <span id="acertos">0</span> | Erros: <span id="erros">0</span></p>
+        <p id="timer">Tempo: 60s</p>
+        <p id="resultado"></p>
+    </div>
+    <footer>Desenvolvido por @helicleiton</footer>
+    
+    <script>
+        const VF = Vex.Flow;
+        const div = document.getElementById("stave");
+        const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+        renderer.resize(300, 150);
+        const context = renderer.getContext();
+        const stave = new VF.Stave(10, 40, 280);
+        stave.addClef("treble").setContext(context).draw();
+
+        let notas = ["c/4", "d/4", "e/4", "f/4", "g/4"];
+        let nomes = ["C", "D", "E", "F", "G"];
+        let acertos = 0;
+        let erros = 0;
+        let tempoRestante = 60;
+        let timer;
+
+        function iniciarJogo() {
+            acertos = 0;
+            erros = 0;
+            tempoRestante = 60;
+            document.getElementById("acertos").textContent = acertos;
+            document.getElementById("erros").textContent = erros;
+            atualizarTimer();
+            timer = setInterval(contagemRegressiva, 1000);
+            novaNota();
+        }
+
+        function atualizarTimer() {
+            document.getElementById("timer").textContent = `Tempo: ${tempoRestante}s`;
+        }
+
+        function contagemRegressiva() {
+            tempoRestante--;
+            atualizarTimer();
+            if (tempoRestante <= 0) {
+                clearInterval(timer);
+                alert(`Fim de jogo! Acertos: ${acertos}, Erros: ${erros}`);
+                iniciarJogo();
+            }
+        }
+
+        function desenharNota(nota) {
+            context.clear();
+            stave.setContext(context).draw();
+            const voice = new VF.Voice({ num_beats: 1, beat_value: 4 });
+            const note = new VF.StaveNote({ keys: [nota], duration: "q" });
+            voice.addTickables([note]);
+            new VF.Formatter().joinVoices([voice]).format([voice], 150);
+            voice.draw(context, stave);
+        }
+
+        function novaNota() {
+            let indiceAtual = Math.floor(Math.random() * notas.length);
+            desenharNota(notas[indiceAtual]);
+            document.getElementById("stave").dataset.notaAtual = nomes[indiceAtual];
+        }
+
+        function verificarNota(resposta) {
+            let nomeCorreto = document.getElementById("stave").dataset.notaAtual;
+            let resultado = document.getElementById("resultado");
+            let teclas = document.querySelectorAll(".tecla");
+            teclas.forEach(tecla => tecla.classList.remove("correta", "errada"));
+            
+            if (resposta === nomeCorreto) {
+                resultado.textContent = "Correto!";
+                resultado.style.color = "green";
+                acertos++;
+            } else {
+                resultado.textContent = "Tente novamente.";
+                resultado.style.color = "red";
+                erros++;
+            }
+            document.getElementById("acertos").textContent = acertos;
+            document.getElementById("erros").textContent = erros;
+            setTimeout(novaNota, 1000);
+        }
+        
+        iniciarJogo();
+    </script>
+</body>
+</html>
